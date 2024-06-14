@@ -1,0 +1,19 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Card Number</title>
+</head>
+<body>
+    <h1>Generate Card Number</h1>
+    <form method="POST">
+        <input type="submit" value="Generate Card Number">
+    </form>
+    {% if card_number %}
+        <h2>Generated Card Number:</h2>
+        <p>{{ card_number }}</p>
+    {% endif %}
+</body>
+</html>
