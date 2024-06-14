@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import pymysql
 from flask_cors import CORS
+import datetime
 
 app = Flask(__name__)
 CORS(app)  # 允許跨域請求
@@ -24,8 +25,7 @@ def verify_card():
     conn = connect_db()
     cursor = conn.cursor()
 
-    # 檢查卡號是否存在於資料庫中
-    sql = "SELECT * FROM card WHERE card_number = %s"
+    sql = "SELECT expiry_time FROM card WHERE card_number = %s"
     cursor.execute(sql, (card_number,))
     result = cursor.fetchone()
 
@@ -33,7 +33,11 @@ def verify_card():
     conn.close()
 
     if result:
-        return jsonify({'status': 'success', 'message': '卡號驗證成功！歡迎進入系統。'})
+        expiry_time = result[0]
+        if expiry_time > datetime.datetime.now():
+            return jsonify({'status': 'success', 'message': '卡號驗證成功！歡迎進入系統。'})
+        else:
+            return jsonify({'status': 'error', 'message': '卡號已過期！'})
     else:
         return jsonify({'status': 'error', 'message': '卡號不存在或無效！請重新輸入。'})
 
