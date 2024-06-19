@@ -1,6 +1,8 @@
 from flask import Flask, request, render_template
 import pymysql
 import datetime
+import string
+import random 
 
 app = Flask(__name__)
 
@@ -35,9 +37,11 @@ def index():
     return render_template('index.html', card_number=card_number)
 
 def generate_card_number():
-    # 生成一個唯一的卡號，例如使用UUID
-    import uuid
-    return str(uuid.uuid4())
+    # 定义字符集，包括大写字母、小写字母和数字
+    characters = string.ascii_letters + string.digits
+    # 生成12位随机字符串
+    random_string = ''.join(random.choices(characters, k=12))
+    return random_string
 
 if __name__ == '__main__':
     app.run(debug=True)
