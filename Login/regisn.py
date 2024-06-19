@@ -2,8 +2,8 @@ from werkzeug.security import generate_password_hash
 import pymysql
 
 # 假設使用者資料
-username = '120129c3'
-password = '96587423c3'
+username = 'new_user'
+password = 'secure_password'
 hashed_password = generate_password_hash(password)
 
 db_host = 'localhost'
@@ -25,8 +25,7 @@ def connect_db():
     except pymysql.MySQLError as e:
         print(f"Error connecting to the database: {e}")
         return None
-    
-# 將新的使用者插入資料庫
+
 
 conn = connect_db()
 cursor = conn.cursor()
