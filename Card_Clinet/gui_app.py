@@ -5,7 +5,7 @@ import subprocess
 import os
 
 # API 伺服器 URL
-API_URL = 'http://localhost:5001/verify_card'
+API_URL = 'http://localhost:5000/verify_card'
 # 卡號文件
 CARD_FILE = 'card_number.txt'
 
