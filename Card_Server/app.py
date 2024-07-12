@@ -1,8 +1,9 @@
-from flask import Flask, request, render_template , jsonify
+from flask import Flask, request, render_template , jsonify ,redirect , url_for
 import pymysql
 import datetime
 import string
 import random 
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 
@@ -16,7 +17,72 @@ db_port = 3300
 def connect_db():
     return pymysql.connect(host=db_host, user=db_user, password=db_password, database=db_name, port=db_port)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def home():
+    return render_template('login.html')
+#####login_API#########
+@app.route('/login', methods=['POST'])
+def login():
+    
+    username = request.form['username']
+    password = request.form['password']
+    
+    conn = connect_db()
+    if conn is None:
+        return "Database connection failed", 500
+
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+        user = cursor.fetchone()
+    except pymysql.MySQLError as e:
+        print(f"Error executing query: {e}")
+        return "Database query failed", 500
+    finally:
+        conn.close()
+    
+    if user and check_password_hash(user['password'], password):
+        return redirect(f'http://127.0.0.1:5000/card_system')
+    else:
+        return 'Login Failed'
+    
+    
+#####註冊頁面#########
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        conn = connect_db()
+        if conn is None:
+            return "Database connection failed", 500
+
+        try:
+            # 檢查用戶是否已經存在
+            cursor = conn.cursor(pymysql.cursors.DictCursor)
+            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                return "使用者名稱重複註冊"
+
+            # 如果用戶不存在，則將用戶添加到資料庫
+            hashed_password = generate_password_hash(password)
+            cursor.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, hashed_password))
+            conn.commit()
+
+            return render_template('login.html')
+
+        except pymysql.MySQLError as e:
+            print(f"Error executing query: {e}")
+            return "Database query failed", 500
+        finally:
+            conn.close()
+
+    return render_template('login.html')
+####產生卡號#######
+@app.route('/card_system', methods=['GET', 'POST'])
 def index():
     card_number = None
     if request.method == 'POST':
@@ -35,7 +101,7 @@ def index():
         conn.close()
 
     return render_template('index.html', card_number=card_number)
-
+###卡號驗證#####
 @app.route('/verify_card', methods=['POST'])
 def verify_card():
     data = request.get_json()
