@@ -41,7 +41,7 @@ def login():
     finally:
         conn.close()
     
-    if user and check_password_hash(user['password'], password):
+    if user and (user['password'], password):
         return redirect(f'http://127.0.0.1:5000/card_system')
     else:
         return 'Login Failed'
@@ -68,7 +68,7 @@ def register():
                 return "使用者名稱重複註冊"
 
             # 如果用戶不存在，則將用戶添加到資料庫
-            hashed_password = generate_password_hash(password)
+            hashed_password = password
             cursor.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, hashed_password))
             conn.commit()
 
@@ -114,47 +114,46 @@ def verify_card():
     data = request.get_json()
     card_number = data.get('card_number')
     machine_code = data.get('machine_code')
-    
-    
 
     conn = connect_db()
     cursor = conn.cursor()
-    cursor_first =conn.cursor()
-    
+
     print(f"Received card_number: {card_number}")
     print(f"Received machine_code: {machine_code}")
-    #第一次登入卡號
-    sql_first = "SELECT expiry_time FROM card WHERE card_number = %s"
-    cursor_first.execute(sql_first, (card_number,))
-    result = cursor_first.fetchone()
 
-    
-    #卡號已經登入過後的SQL語法
-    ##sql = "SELECT expiry_time,machinecode FROM card WHERE card_number = %s and machinecode = %s"
-  
-    ##cursor.execute(sql, (card_number,machine_code))
-    
-    ##result = cursor.fetchone()
-    
-    if result :
-        sql_update_query = "UPDATE card SET machinecode = %s WHERE card_number = %s"
-        cursor.execute(sql_update_query, (machine_code, card_number))
-        conn.commit() 
-    else:
-        print ("Errorcode:machinecode")
-    
-    cursor.close()
-    conn.close()
+    # 檢查卡號是否存在
+    sql_first = "SELECT expiry_time, machinecode FROM card WHERE card_number = %s"
+    cursor.execute(sql_first, (card_number,))
+    result = cursor.fetchone()
 
     if result:
-        expiry_time = result[0]
-        if expiry_time > datetime.datetime.now():
-            
+        expiry_time, stored_machine_code = result
+      
+        if stored_machine_code is None:
+            # 第一次登入，更新機器碼
+            sql_update_query = "UPDATE card SET machinecode = %s WHERE card_number = %s"
+            cursor.execute(sql_update_query, (machine_code, card_number))
+            conn.commit()
+            cursor.close()
+            conn.close()
             return jsonify({'status': 'success', 'message': '卡號驗證成功！歡迎進入系統。'})
-            
+        elif stored_machine_code == machine_code:
+            # 檢查卡號是否過期
+            if expiry_time > datetime.datetime.now():
+                cursor.close()
+                conn.close()
+                return jsonify({'status': 'success', 'message': '卡號驗證成功！歡迎進入系統。'})
+            else:
+                cursor.close()
+                conn.close()
+                return jsonify({'status': 'error', 'message': '卡號已過期！'})
         else:
-            return jsonify({'status': 'error', 'message': '卡號已過期！'})
+            cursor.close()
+            conn.close()
+            return jsonify({'status': 'error', 'message': '機器碼錯誤！'})
     else:
+        cursor.close()
+        conn.close()
         return jsonify({'status': 'error', 'message': '卡號不存在或無效！請重新輸入。'})
     
 def generate_card_number():
