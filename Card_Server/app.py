@@ -81,9 +81,10 @@ def register():
             conn.close()
 
     return render_template('login.html')
+
 ####產生卡號#######
 @app.route('/card_system', methods=['GET', 'POST'])
-def index():
+def card_system():
     card_number = None
     if request.method == 'POST':
         expiry_minutes = int(request.form['expiry'])
@@ -93,14 +94,20 @@ def index():
         conn = connect_db()
         cursor = conn.cursor()
         
-        sql = "INSERT INTO card (card_number, expiry_time) VALUES (%s, %s)"
-        cursor.execute(sql, (card_number, expiry_time))
-        conn.commit()
-        
-        cursor.close()
-        conn.close()
+        try:
+            sql = "INSERT INTO card (card_number, expiry_time) VALUES (%s, %s)"
+            cursor.execute(sql, (card_number, expiry_time))
+            conn.commit()
+        except pymysql.MySQLError as e:
+            print(f"Error executing query: {e}")
+            return "Database query failed", 500
+        finally:
+            cursor.close()
+            conn.close()
+            
 
     return render_template('index.html', card_number=card_number)
+
 ###卡號驗證#####
 @app.route('/verify_card', methods=['POST'])
 def verify_card():
