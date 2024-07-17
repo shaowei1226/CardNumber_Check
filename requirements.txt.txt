@@ -1,8 +1,0 @@
-pymysql
-datetime
-CORS
-Flask
-string
-os
-requests
-twinter
