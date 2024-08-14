@@ -3,6 +3,7 @@ from tkinter import messagebox
 import requests
 import subprocess
 import os
+import Hands
 
 # API 伺服器 URL
 API_URL = 'http://localhost:5000/verify_card'
@@ -53,6 +54,9 @@ def verify_card():
         if result['status'] == 'success':
             save_card_number(card_number)
             messagebox.showinfo("Success", result['message'])
+            
+            root.destroy()  # 關閉當前窗口
+            Hands.open_poker_hand_gui()
         else:
             messagebox.showerror("Error", result['message'])
     else:
